@@ -141,14 +141,17 @@ parseDespegarComHTML() {
 parseAllFilesDespegarComHTML() {
 	if [ "$1" == "" ]; then
 		#echo "usage: <cache fname>"
-		echo "FileName,From,To,Price"
+		echo "From,To,Date,Currency,Price"
 		for i in `ls $cacheDir/http*`; do
 				fname="$i"
 				from="`echo $fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\1/g'`"
 				to="`echo $fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\2/g'`"
-				echo -n "$fname,$from,$to,"
+				mdate="`echo $fname | perl -pe 's/.*([\d]{4}-[\d]{2}-[\d]{2}).*/\1/g'`"
 				r="`parseDespegarComHTML $fname`"
-				echo $r | perl -pe 's/ /,/g'
+				if [ "$r" != "" ]; then
+					echo -n "$from,$to,$mdate,USD,"
+					echo $r | perl -pe 's/ /,/g'
+				fi
 		done
 	else
 		echo 'stub'
