@@ -60,7 +60,7 @@ for f in $from; do
 		echo -n "from: $f "
 		echo -n "to: $t --> U\$D "
 		
-		parseDespegarComHTML $fname
+		parseDespegarComHTML $cacheDir/$fname
 		#sleep 20
 		echo "----"
 	done
@@ -107,7 +107,7 @@ if [ "$mode" == "fixed-route" ]; then
 				echo -n "from: $f "
 				echo -n "to: $t --> U\$D "
 				
-				parseDespegarComHTML $fname
+				parseDespegarComHTML $cacheDir/$fname
 				echo "----"
 #			done
 #		done
@@ -124,7 +124,7 @@ parseDespegarComHTML() {
 		#echo $fname
 		#pm="`cat $cacheDir/$fname | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | cut -d' ' -f12 | perl -pe 's/\.//g'`"
 		#pm="`cat $cacheDir/$fname | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | perl -pe 's/.*\$.*?([\d\.]+).*/\1/g' | perl -pe 's/\.//g'`"
-		cat $cacheDir/$fname 2> /dev/null | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | perl -pe 's/.*\$.*?([\d\.]+).*?/\1/g' | perl -pe 's/\.//g' | head -1
+		cat $fname 2> /dev/null | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | perl -pe 's/.*\$.*?([\d\.]+).*?/\1/g' | perl -pe 's/\.//g' | head -1
 		#echo $pm
 		#let cnt=0
 		#for i in `echo $pm`; do
@@ -142,10 +142,10 @@ parseAllFilesDespegarComHTML() {
 	if [ "$1" == "" ]; then
 		#echo "usage: <cache fname>"
 		echo "FileName,From,To,Price"
-		for i in `ls http*`; do
+		for i in `ls $cacheDir/http*`; do
 				fname="$i"
-				from="`echo $cacheDir/$fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\1/g'`"
-				to="`echo $cacheDir/$fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\2/g'`"
+				from="`echo $fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\1/g'`"
+				to="`echo $fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\2/g'`"
 				echo -n "$fname,$from,$to,"
 				r="`parseDespegarComHTML $fname`"
 				echo $r | perl -pe 's/ /,/g'
