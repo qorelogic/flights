@@ -3,6 +3,8 @@
 from="bue sao mad rio lon mia dxb lim ccs bog scl mvd"
 to="dar nbo jnb mad rio cpt lon mia dxb lim ccs bog scl mvd"
 
+cacheDir="./cache"
+
 printUsage() {
 	#echo "usage: <fromdate[format=ddmmyyyy]>"
 	echo "usage: <fromdate[format=yyyy-mm-dd]>"
@@ -39,6 +41,8 @@ makeFurl() {
 }
 
 findFlights() {
+mode="$1"
+if [ "$mode" == "fixed-date" ]; then
 for f in $from; do
 	for t in $to; do	
 		echo -n "fetching data... "
@@ -51,8 +55,8 @@ for f in $from; do
 
 		fname="`makeFurl $furl`"
 		
-		wget -qO - $furl  > $fname		
-		echo "  saved to $fname"
+		wget -qO - $furl  > $cacheDir/$fname
+		echo "  saved to $cacheDir/$fname"
 		echo -n "from: $f "
 		echo -n "to: $t --> U\$D "
 		
@@ -61,6 +65,55 @@ for f in $from; do
 		echo "----"
 	done
 done
+fi
+if [ "$mode" == "fixed-route" ]; then
+#	for iYear in `seq 2012 2014`; do
+		#currentMonth="`date +'%m'`"
+#		for jMonth in `seq 1 12`; do
+		
+#			for kDay in `seq 1 31`; do
+
+				
+#				iYear="`python -c \"
+#import string as st
+#print st.zfill('$iYear', 4)
+#\"`"
+#				jMonth="`python -c \"
+#import string as st
+#print st.zfill('$jMonth', 2)
+#\"`"
+#				kDay="`python -c \"
+#import string as st
+#print st.zfill('$kDay', 2)
+#\"`"
+	for iRange in `seq 2 100`; do
+				c=$(date -d "+$iRange days")
+				mdate=$(date -d "$c" +"%Y-%m-%d")
+				#mdate="$iYear-$jMonth-$kDay"
+				
+				f="bue"
+				t="dar"
+				mdateFrom="$mdate"
+				mdateTo="$mdate"
+				
+				#furl="http://m.despegar.com.ar/vuelos/oneway/c-${f}/c-${t}/$mdateFrom/$mdataTo/1/0/0/i1"
+				furl="http://m.despegar.com.ar/vuelos/oneway/c-${f}/c-${t}/${mdateFrom}/${mdateTo}/1/0/0/i1"
+				echo $furl
+				
+				fname="`makeFurl $furl`"
+				
+				wget -qO - $furl  > $cacheDir/$fname
+				echo "  saved to $cacheDir/$fname"
+				echo -n "from: $f "
+				echo -n "to: $t --> U\$D "
+				
+				parseDespegarComHTML $fname
+				echo "----"
+#			done
+#		done
+#	done
+	done
+fi
 }
 
 parseDespegarComHTML() {
@@ -69,16 +122,19 @@ parseDespegarComHTML() {
 	else
 		fname="$1"
 		#echo $fname
-		pm="`cat $fname | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | cut -d' ' -f12 | perl -pe 's/\.//g'`"
-		let cnt=0
-		for i in `echo $pm`; do
+		#pm="`cat $cacheDir/$fname | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | cut -d' ' -f12 | perl -pe 's/\.//g'`"
+		#pm="`cat $cacheDir/$fname | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | perl -pe 's/.*\$.*?([\d\.]+).*/\1/g' | perl -pe 's/\.//g'`"
+		cat $cacheDir/$fname 2> /dev/null | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' | perl -pe 's/.*\$.*?([\d\.]+).*?/\1/g' | perl -pe 's/\.//g' | head -1
+		#echo $pm
+		#let cnt=0
+		#for i in `echo $pm`; do
 			#echo $cnt
 			#if [ "$cnt" != "0" ]; then # all prices
-			if [ "$cnt" == "1" ]; then # only first price
-				echo $i
-			fi
-			let cnt=$cnt+1
-		done
+		#	if [ "$cnt" == "1" ]; then # only first price
+		#		echo $i
+		#	fi
+		#	let cnt=$cnt+1
+		#done
 	fi
 }
 
@@ -88,26 +144,14 @@ parseAllFilesDespegarComHTML() {
 		echo "FileName,From,To,Price"
 		for i in `ls http*`; do
 				fname="$i"
-				from="`echo $fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\1/g'`"
-				to="`echo $fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\2/g'`"
+				from="`echo $cacheDir/$fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\1/g'`"
+				to="`echo $cacheDir/$fname | perl -pe 's/.*-c-(.*?)-c-(.*?)-.*/\2/g'`"
 				echo -n "$fname,$from,$to,"
 				r="`parseDespegarComHTML $fname`"
 				echo $r | perl -pe 's/ /,/g'
 		done
 	else
-#	for f in $from; do
-#		for t in $to; do	
-	for i in `ls http*`; do
-			#echo -n "despegar.com "
-			#echo -n "from: $f "
-			#echo -n "to: $t "
-			#fname="cache-from-${f}-to-${t}.despegar.com.html"
-			fname="$1"
-			#echo "$fname "
-			#echo "fetching data..."
-			cat $fname  | lynx -stdin -dump | grep -C2 '\$' | grep '\$' | grep 'vuelo' 
-#		done
-	done
+		echo 'stub'
 	fi
 }
 
@@ -117,7 +161,7 @@ getDistance() {
 	furl="http://m.despegar.com.ar/vuelos/oneway/c-${f}/c-${t}/${mdateFrom}/${mdateTo}/1/0/0/i1"
 	fname="`makeFurl $furl`"
 	
-	pm="`parseDespegarComHTML $fname`"
+	pm="`parseDespegarComHTML $cacheDir/$fname`"
 	echo $pm
 }
 
@@ -127,7 +171,7 @@ getTicketPrice() {
 	furl="http://m.despegar.com.ar/vuelos/oneway/c-${f}/c-${t}/${mdateFrom}/${mdateTo}/1/0/0/i1"
 	fname="`makeFurl $furl`"
 	
-	pm="`parseDespegarComHTML $fname`"
+	pm="`parseDespegarComHTML $cacheDir/$fname`"
 	echo $pm
 }
 
